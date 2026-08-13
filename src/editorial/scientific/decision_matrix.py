@@ -10,13 +10,14 @@ registradas em log.
 
 from __future__ import annotations
 
+import logging
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 
-from ..errors import ScientificError
+from ..errors import ScientificError, fail
 from ..logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -56,20 +57,18 @@ class WeightedDecisionMatrix:
                 f"Quantidade de critérios ({len(criteria)}) difere de pesos ({len(weights)})",
                 user_message="Critérios e pesos precisam ter a mesma quantidade de itens.",
             )
-
-        weight_sum = sum(weights)
-        if not math.isclose(weight_sum, 1.0, abs_tol=_WEIGHT_TOLERANCE):
+        if not math.isclose(sum(weights), 1.0, abs_tol=_WEIGHT_TOLERANCE):
             raise ScientificError(
-                f"Pesos somam {weight_sum:.4f} (esperado ~1.0)",
+                f"Pesos somam {sum(weights):.4f} (esperado ~1.0)",
                 user_message="Os pesos da matriz precisam somar 1.0.",
             )
 
-        missing: list[str] = []
-        for name, row in alternatives.items():
-            for criterion in criteria:
-                if criterion not in row:
-                    missing.append(f"{name}.{criterion}")
-
+        missing = [
+            f"{name}.{criterion}"
+            for name, row in alternatives.items()
+            for criterion in criteria
+            if criterion not in row
+        ]
         if missing:
             raise ScientificError(
                 f"Critérios ausentes em alternativas: {', '.join(missing[:5])}",
@@ -83,31 +82,26 @@ class WeightedDecisionMatrix:
     def score(self) -> list[ScoredAlternative]:
         results: list[ScoredAlternative] = []
         for name, row in self.alternatives.items():
-            weighted = 0.0
             details: dict[str, float] = {}
+            weighted = 0.0
             for criterion, weight in zip(self.criteria, self.weights, strict=True):
                 value = float(row[criterion])
                 if not math.isfinite(value):
-                    logger.warning(
-                        "Valor não-finito em matriz de decisão",
-                        extra={
-                            "code": "non_finite_value",
-                            "doc_id": f"{name}.{criterion}",
-                        },
-                    )
-                    raise ScientificError(
+                    fail(
+                        logger,
+                        ScientificError,
                         f"Valor inválido para {name}.{criterion}",
                         user_message="Há valores inválidos (NaN/Inf) na matriz de decisão.",
+                        level=logging.WARNING,
+                        code="non_finite_value",
+                        doc_id=f"{name}.{criterion}",
                     )
                 details[criterion] = value
                 weighted += value * weight
             results.append(ScoredAlternative(name=name, score=weighted, rank=0, details=details))
 
         results.sort(key=lambda item: item.score, reverse=True)
-        ranked = [
-            ScoredAlternative(name=item.name, score=item.score, rank=rank, details=item.details)
-            for rank, item in enumerate(results, start=1)
-        ]
+        ranked = [replace(item, rank=rank) for rank, item in enumerate(results, start=1)]
 
         logger.info(
             "Matriz de decisão avaliada",

@@ -14,7 +14,7 @@ from typing import Any
 import httpx
 
 from ..config import Settings, get_settings
-from ..errors import IngestionError
+from ..errors import IngestionError, fail
 from ..logging_setup import get_logger
 from ..security.access import AccessControl
 from .base import Document, Source, stable_uid
@@ -79,19 +79,16 @@ class ApiSource(Source):
                     params=self.params,
                 )
         except httpx.HTTPError as exc:
-            logger.error(
-                "Falha HTTP na coleta da API",
-                extra={
-                    "source": self.name,
-                    "status": "error",
-                    "code": "http_failure",
-                    "doc_id": self.url,
-                },
-            )
-            raise IngestionError(
+            fail(
+                logger,
+                IngestionError,
                 f"Falha HTTP ao acessar {self.url}: {exc}",
                 user_message=f"Não foi possível acessar a API ({exc}).",
-            ) from exc
+                source=self.name,
+                status="error",
+                code="http_failure",
+                doc_id=self.url,
+            )
 
         if response.status_code != 200:
             logger.warning(
@@ -127,32 +124,18 @@ class ApiSource(Source):
 
         documents: list[Document] = []
         for index, item in enumerate(items):
-            if not isinstance(item, dict) or self.text_field not in item:
-                logger.warning(
-                    "Item sem campo de texto ignorado",
-                    extra={
-                        "source": self.name,
-                        "status": "invalid",
-                        "code": "missing_text_field",
-                    },
-                )
+            if not isinstance(item, dict):
                 continue
             raw_text = str(item.get(self.text_field) or "").strip()
             if not raw_text:
                 logger.warning(
-                    "Item com texto vazio ignorado",
-                    extra={
-                        "source": self.name,
-                        "status": "invalid",
-                        "code": "empty_text",
-                    },
+                    "Item de API inválido ignorado",
+                    extra={"source": self.name, "status": "invalid", "code": "invalid_item"},
                 )
                 continue
-
-            uid = stable_uid(item.get(self.id_field) if self.id_field else None, index)
             documents.append(
                 Document(
-                    uid=uid,
+                    uid=stable_uid(item.get(self.id_field) if self.id_field else None, index),
                     text=raw_text,
                     source=f"api:{self.url}",
                     status="ok",
@@ -168,7 +151,6 @@ class ApiSource(Source):
                 user_message="Nenhum documento válido foi extraído da API.",
             )
 
-        duration_ms = (time.perf_counter() - started) * 1000
         logger.info(
             "API ingerida",
             extra={
@@ -177,7 +159,7 @@ class ApiSource(Source):
                 "code": "api_ingested",
                 "doc_id": self.url,
                 "metric": f"{len(documents)} docs",
-                "duration_ms": round(duration_ms, 2),
+                "duration_ms": round((time.perf_counter() - started) * 1000, 2),
             },
         )
         return documents

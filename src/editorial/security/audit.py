@@ -13,7 +13,7 @@ import shutil
 import subprocess
 from typing import Any
 
-from ..errors import SecurityError
+from ..errors import SecurityError, fail
 from ..logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -54,14 +54,13 @@ def audit_dependencies() -> dict[str, Any]:
             check=False,
         )
     except (subprocess.TimeoutExpired, OSError) as exc:
-        logger.error(
-            "Falha na execução da auditoria",
-            extra={"code": "audit_execution_failed"},
-        )
-        raise SecurityError(
+        fail(
+            logger,
+            SecurityError,
             f"Auditoria de dependências falhou: {exc}",
             user_message="Não foi possível executar a auditoria de dependências.",
-        ) from exc
+            code="audit_execution_failed",
+        )
 
     try:
         payload = json.loads(result.stdout or "{}")

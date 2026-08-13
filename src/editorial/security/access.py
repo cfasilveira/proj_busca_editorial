@@ -8,15 +8,13 @@ mascarado, e levantada como SecurityError (fail first no chamador).
 from __future__ import annotations
 
 import hmac
-import re
+import logging
 
 from ..config import Settings, get_settings
-from ..errors import SecurityError
+from ..errors import SecurityError, fail
 from ..logging_setup import get_logger
 
 logger = get_logger(__name__)
-
-_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9._~+/-]{6,}")
 
 
 class AccessControl:
@@ -37,19 +35,16 @@ class AccessControl:
         return hmac.compare_digest(token, allowed)
 
     def _reject(self, scope: str, token: str | None) -> None:
-        shown = self._mask(token) if token else "<ausente>"
-        logger.warning(
-            "Tentativa de acesso não autorizado",
-            extra={
-                "code": "unauthorized_access",
-                "scope": scope,
-                "actor": shown,
-                "status": "denied",
-            },
-        )
-        raise SecurityError(
+        fail(
+            logger,
+            SecurityError,
             f"Acesso não autorizado ao escopo '{scope}'",
             user_message="Credenciais inválidas. Verifique o token de acesso.",
+            level=logging.WARNING,
+            code="unauthorized_access",
+            scope=scope,
+            actor=self._mask(token) if token else "<ausente>",
+            status="denied",
         )
 
     def require_read(self, token: str | None) -> None:

@@ -64,48 +64,11 @@ class ScraperSource(Source):
         documents: list[Document] = []
         with httpx.Client(timeout=self.settings.http_timeout) as client:
             for index, url in enumerate(self.urls):
-                if not url.startswith(("http://", "https://")):
-                    logger.warning(
-                        "URL de scraping inválida ignorada",
-                        extra={
-                            "source": self.name,
-                            "status": "invalid",
-                            "code": "bad_url",
-                            "doc_id": url,
-                        },
-                    )
-                    continue
-                try:
-                    response = client.get(
-                        url,
-                        headers={"User-Agent": self.settings.user_agent},
-                    )
-                except httpx.HTTPError:
-                    logger.error(
-                        "Falha HTTP no scraping",
-                        extra={
-                            "source": self.name,
-                            "status": "error",
-                            "code": "http_failure",
-                            "doc_id": url,
-                        },
-                    )
+                html = self._fetch(client, url)
+                if html is None:
                     continue
 
-                if response.status_code != 200:
-                    logger.warning(
-                        "Status não-2xx no scraping",
-                        extra={
-                            "source": self.name,
-                            "status": "error",
-                            "code": "http_status",
-                            "metric": str(response.status_code),
-                            "doc_id": url,
-                        },
-                    )
-                    continue
-
-                text = self._extract_text(response.text)
+                text = self._extract_text(html)
                 if not text:
                     logger.warning(
                         "Página sem conteúdo extraível",
@@ -145,6 +108,41 @@ class ScraperSource(Source):
             },
         )
         return documents
+
+    def _fetch(self, client: httpx.Client, url: str) -> str | None:
+        """Baixa a página e retorna HTML, ou None com o motivo logado."""
+        if not url.startswith(("http://", "https://")):
+            logger.warning(
+                "URL de scraping inválida ignorada",
+                extra={"source": self.name, "status": "invalid", "code": "bad_url", "doc_id": url},
+            )
+            return None
+        try:
+            response = client.get(url, headers={"User-Agent": self.settings.user_agent})
+        except httpx.HTTPError:
+            logger.error(
+                "Falha HTTP no scraping",
+                extra={
+                    "source": self.name,
+                    "status": "error",
+                    "code": "http_failure",
+                    "doc_id": url,
+                },
+            )
+            return None
+        if response.status_code != 200:
+            logger.warning(
+                "Status não-2xx no scraping",
+                extra={
+                    "source": self.name,
+                    "status": "error",
+                    "code": "http_status",
+                    "metric": str(response.status_code),
+                    "doc_id": url,
+                },
+            )
+            return None
+        return response.text
 
     def _extract_text(self, html: str) -> str:
         soup = BeautifulSoup(html, "lxml")

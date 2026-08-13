@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
@@ -24,14 +24,7 @@ class Document:
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "uid": self.uid,
-            "text": self.text,
-            "source": self.source,
-            "collected_at": self.collected_at,
-            "status": self.status,
-            "metadata": self.metadata,
-        }
+        return asdict(self)
 
 
 class Source(ABC):

@@ -16,7 +16,7 @@ from pathlib import Path
 
 import numpy as np
 
-from ..errors import VectorError
+from ..errors import VectorError, fail
 from ..logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -151,14 +151,14 @@ class FaissStore(VectorStore):
             self._faiss.write_index(self._index, str(target))
             Path(str(target) + ".ids").write_text("\n".join(self._ids), encoding="utf-8")
         except (OSError, ValueError) as exc:
-            logger.error(
-                "Falha ao salvar índice FAISS",
-                extra={"code": "index_save_failed", "doc_id": str(target)},
-            )
-            raise VectorError(
-                f"Não foi possível salvar o índice em {target}: {exc}",
+            fail(
+                logger,
+                VectorError,
+                f"Falha ao salvar índice FAISS em {target}: {exc}",
                 user_message=f"Não foi possível salvar o índice vetorial em '{target}'.",
-            ) from exc
+                code="index_save_failed",
+                doc_id=str(target),
+            )
         logger.info("Índice FAISS salvo", extra={"code": "index_saved", "doc_id": str(target)})
 
     def load(self, path: str | Path) -> None:
@@ -174,14 +174,14 @@ class FaissStore(VectorStore):
             if ids_path.exists():
                 self._ids = ids_path.read_text(encoding="utf-8").splitlines()
         except Exception as exc:
-            logger.error(
-                "Falha ao carregar índice FAISS",
-                extra={"code": "index_load_failed", "doc_id": str(target)},
-            )
-            raise VectorError(
-                f"Não foi possível carregar o índice de {target}: {exc}",
+            fail(
+                logger,
+                VectorError,
+                f"Falha ao carregar índice FAISS de {target}: {exc}",
                 user_message=f"Não foi possível carregar o índice vetorial de '{target}'.",
-            ) from exc
+                code="index_load_failed",
+                doc_id=str(target),
+            )
         logger.info(
             "Índice FAISS carregado",
             extra={"code": "index_loaded", "doc_id": str(target)},
@@ -190,19 +190,16 @@ class FaissStore(VectorStore):
 
 def create_store(kind: str, dimension: int) -> VectorStore:
     """Fábrica de stores — ponto único de troca de backend."""
-    if kind == "faiss":
-        return FaissStore(dimension)
-    if kind == "milvus":
-        raise VectorError(
-            "Backend Milvus não implementado",
-            user_message="O backend Milvus ainda não está implementado nesta versão.",
-        )
-    if kind == "pinecone":
-        raise VectorError(
-            "Backend Pinecone não implementado",
-            user_message="O backend Pinecone ainda não está implementado nesta versão.",
-        )
-    raise VectorError(
-        f"Backend vetorial desconhecido: {kind}",
-        user_message=f"Backend vetorial '{kind}' não é reconhecido.",
-    )
+    match kind:
+        case "faiss":
+            return FaissStore(dimension)
+        case "milvus" | "pinecone":
+            raise VectorError(
+                f"Backend {kind} não implementado",
+                user_message=f"O backend {kind} ainda não está implementado nesta versão.",
+            )
+        case _:
+            raise VectorError(
+                f"Backend vetorial desconhecido: {kind}",
+                user_message=f"Backend vetorial '{kind}' não é reconhecido.",
+            )

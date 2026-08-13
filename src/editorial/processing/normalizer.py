@@ -79,13 +79,6 @@ def min_max_normalize(values: Sequence[float]) -> list[float]:
     return ((arr - lo) / (hi - lo)).tolist()
 
 
-def l2_normalize(vector: np.ndarray) -> np.ndarray:
-    norm = np.linalg.norm(vector)
-    if norm == 0:
-        return vector
-    return vector / norm
-
-
 def profile(lengths: Sequence[int], token_lists: Iterable[Sequence[str]]) -> dict:
     """Perfil linguístico agregado do corpus (ex.: estilo editorial)."""
     freqs = relative_frequencies(token_frequencies(token_lists))

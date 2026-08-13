@@ -14,11 +14,55 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from typing import Any
 
 from .config import Settings, get_settings
 from .errors import EditorialError
 from .logging_setup import setup_logging
 from .pipeline import run_pipeline
+from .security import AccessControl, audit_dependencies
+from .vector import EmbeddingModel, FaissStore
+
+
+def _print_json(data: Any) -> None:
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def _cmd_pipeline(args: argparse.Namespace, settings: Settings) -> int:
+    result = run_pipeline(args.csv, args.outdir, settings, text_column=args.text_column)
+    _print_json({"ok": True, **result["summary"]})
+    return 0
+
+
+def _cmd_search(args: argparse.Namespace, settings: Settings) -> int:
+    model = EmbeddingModel.load(args.model)
+    store = FaissStore(settings.vector_dim)
+    store.load(args.index)
+    results = store.search(model.transform(args.query), top_k=args.topk)
+    if not results:
+        print("Nenhum resultado encontrado para a consulta.")
+        return 1
+    for uid, score in results:
+        print(f"{score:.4f}\t{uid}")
+    return 0
+
+
+def _cmd_audit(args: argparse.Namespace, settings: Settings) -> int:
+    summary = audit_dependencies()
+    _print_json(summary)
+    return 0 if summary.get("ok") else 1
+
+
+def _cmd_auth(args: argparse.Namespace, settings: Settings) -> int:
+    access = AccessControl(settings)
+    check = access.require_read if args.scope == "read" else access.require_write
+    try:
+        check(args.token)
+    except EditorialError:
+        print("Acesso negado.")
+        return 1
+    print("Acesso autorizado.")
+    return 0
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -59,55 +103,6 @@ def _build_parser() -> argparse.ArgumentParser:
     p_auth.add_argument("--scope", choices=["read", "write"], default="read")
     p_auth.set_defaults(func=_cmd_auth)
     return parser
-
-
-def _cmd_pipeline(args: argparse.Namespace, settings: Settings) -> int:
-    result = run_pipeline(
-        args.csv,
-        args.outdir,
-        settings,
-        text_column=args.text_column,
-    )
-    print(json.dumps({"ok": True, **result["summary"]}, ensure_ascii=False, indent=2))
-    return 0
-
-
-def _cmd_search(args: argparse.Namespace, settings: Settings) -> int:
-    from .vector import EmbeddingModel, FaissStore
-
-    model = EmbeddingModel.load(args.model)
-    store = FaissStore(settings.vector_dim)
-    store.load(args.index)
-    vector = model.transform(args.query)
-    results = store.search(vector, top_k=args.topk)
-    if not results:
-        print("Nenhum resultado encontrado para a consulta.")
-        return 1
-    for uid, score in results:
-        print(f"{score:.4f}\t{uid}")
-    return 0
-
-
-def _cmd_audit(args: argparse.Namespace, settings: Settings) -> int:
-    from .security import audit_dependencies
-
-    summary = audit_dependencies()
-    print(json.dumps(summary, ensure_ascii=False, indent=2))
-    return 0 if summary.get("ok") else 1
-
-
-def _cmd_auth(args: argparse.Namespace, settings: Settings) -> int:
-    from .security import AccessControl
-
-    access = AccessControl(settings)
-    check = access.require_read if args.scope == "read" else access.require_write
-    try:
-        check(args.token)
-    except EditorialError:
-        print("Acesso negado.")
-        return 1
-    print("Acesso autorizado.")
-    return 0
 
 
 def main(argv: list[str] | None = None) -> int:

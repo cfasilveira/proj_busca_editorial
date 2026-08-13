@@ -155,8 +155,7 @@ def build_report(
     documents: Sequence[Document],
     analysis: dict[str, Any],
     vector_info: dict[str, Any],
-    settings: Settings,
-) -> dict[str, Any]:
+) -> ReportBuilder:
     builder = ReportBuilder(f"Análise editorial {datetime.now(UTC).date()}")
     builder.add_section(
         "ingestion",
@@ -179,7 +178,12 @@ def build_report(
             for d in documents
         ],
     )
-    return builder.build()
+    return builder
+
+
+def _write_json(path: Path, data: Any) -> None:
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(data, handle, ensure_ascii=False, indent=2)
 
 
 def run_pipeline(
@@ -196,32 +200,23 @@ def run_pipeline(
     corpus = process_documents(documents, settings)
     analysis = analyze_corpus(corpus)
     vector_info = index_corpus(corpus, settings)
-    report = build_report(corpus.documents, analysis, vector_info, settings)
 
+    builder = build_report(corpus.documents, analysis, vector_info)
+    report = builder.build()
     report_path = target / "report.json"
-    builder = ReportBuilder(f"Análise editorial {datetime.now(UTC).date()}")
-    for name, section in report["sections"].items():
-        builder.add_section(name, section)
     builder.to_json(report_path)
 
-    with (target / "documents.json").open("w", encoding="utf-8") as handle:
-        json.dump(
-            [d.to_dict() for d in corpus.documents],
-            handle,
-            ensure_ascii=False,
-            indent=2,
-        )
-
-    with (target / "tokens.json").open("w", encoding="utf-8") as handle:
-        json.dump(
-            [
-                {"uid": d.uid, "tokens": toks}
-                for d, toks in zip(corpus.documents, corpus.token_lists, strict=True)
-            ],
-            handle,
-            ensure_ascii=False,
-            indent=2,
-        )
+    _write_json(
+        target / "documents.json",
+        [d.to_dict() for d in corpus.documents],
+    )
+    _write_json(
+        target / "tokens.json",
+        [
+            {"uid": d.uid, "tokens": toks}
+            for d, toks in zip(corpus.documents, corpus.token_lists, strict=True)
+        ],
+    )
 
     logger.info(
         "Pipeline concluído",

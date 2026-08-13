@@ -11,6 +11,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import cross_val_score
 
 from ..errors import ScientificError
 from ..logging_setup import get_logger
@@ -30,10 +32,6 @@ class RegressionResult:
 def _as_float_array(values: Sequence[float], label: str) -> np.ndarray:
     arr = np.asarray(values, dtype=float)
     if not np.all(np.isfinite(arr)):
-        logger.warning(
-            f"Entrada '{label}' contém valores não-finitos",
-            extra={"code": "non_finite_input", "metric": label},
-        )
         raise ScientificError(
             f"Entrada '{label}' contém valores não-finitos",
             user_message=f"Os valores de '{label}' contêm NaN ou infinitos.",
@@ -95,53 +93,37 @@ def cross_validation_r2(x: Sequence[float], y: Sequence[float], folds: int = 3) 
             user_message="O número de folds precisa ser maior ou igual a 2.",
         )
 
-    n = int(x_arr.size)
-    folds = min(folds, n)
-    fold_sizes = np.full(folds, n // folds, dtype=int)
-    fold_sizes[: n % folds] += 1
-
-    r2_scores: list[float] = []
-    index = 0
-    for fold_size in fold_sizes:
-        test_idx = np.arange(index, index + fold_size)
-        train_idx = np.setdiff1d(np.arange(n), test_idx)
-        index += fold_size
-
-        try:
-            x_train, y_train = x_arr[train_idx], y_arr[train_idx]
-            x_test, y_test = x_arr[test_idx], y_arr[test_idx]
-
-            slope, intercept = np.polyfit(x_train, y_train, 1)
-            predicted = slope * x_test + intercept
-            ss_res = float(np.sum((y_test - predicted) ** 2))
-            ss_tot = float(np.sum((y_test - y_test.mean()) ** 2))
-            r2_scores.append(1.0 - ss_res / ss_tot if ss_tot > 0 else 0.0)
-        except (np.linalg.LinAlgError, ValueError) as exc:
-            logger.warning(
-                "Falha em fold de validação cruzada",
-                extra={"code": "crossval_fold_failure", "metric": str(exc)},
+    try:
+        scores = np.asarray(
+            cross_val_score(
+                LinearRegression(),
+                x_arr.reshape(-1, 1),
+                y_arr,
+                cv=min(folds, int(x_arr.size)),
             )
-            continue
-
-    if not r2_scores:
+        )
+    except ValueError as exc:
+        logger.warning(
+            "Falha na validação cruzada",
+            extra={"code": "crossval_failure", "metric": str(exc)},
+        )
         raise ScientificError(
             "Todos os folds de validação cruzada falharam",
             user_message="A validação cruzada não conseguiu produzir nenhum fold válido.",
-        )
+        ) from exc
 
-    arr = np.asarray(r2_scores)
     result = {
-        "mean_r2": float(arr.mean()),
-        "std_r2": float(arr.std()),
-        "min_r2": float(arr.min()),
-        "max_r2": float(arr.max()),
-        "folds": len(r2_scores),
+        "mean_r2": float(scores.mean()),
+        "std_r2": float(scores.std()),
+        "min_r2": float(scores.min()),
+        "max_r2": float(scores.max()),
+        "folds": int(scores.size),
     }
 
-    if arr.std() > 0.25:
+    if scores.std() > 0.25:
         logger.warning(
             "Alta variância entre folds de validação cruzada",
-            extra={"code": "crossval_high_variance", "metric": f"std={arr.std():.3f}"},
+            extra={"code": "crossval_high_variance", "metric": f"std={scores.std():.3f}"},
         )
     logger.info(
         "Validação cruzada concluída",

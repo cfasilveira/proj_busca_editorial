@@ -21,6 +21,8 @@ logger = get_logger(__name__)
 
 _TOKEN_RE = re.compile(r"\b[\w]+(?:[-']\w+)*\b", re.UNICODE)
 
+_DEFAULT_MODELS = ("pt_core_news_sm", "en_core_web_sm")
+
 
 def _regex_tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text)
@@ -33,7 +35,6 @@ class Tokenizer:
         self._spacy_nlp = None
         self._nltk_available = False
         self._active_backend = "internal"
-
         self._try_load_spacy(spacy_model)
         if self._spacy_nlp is None:
             self._try_load_nltk(nltk_data_dir)
@@ -41,35 +42,29 @@ class Tokenizer:
     def _try_load_spacy(self, spacy_model: str | None) -> None:
         try:
             import spacy  # type: ignore[import-not-found]
-
-            candidates = []
-            if spacy_model:
-                candidates.append(spacy_model)
-            candidates.extend(["pt_core_news_sm", "en_core_web_sm"])
-
-            for candidate in candidates:
-                try:
-                    self._spacy_nlp = spacy.load(candidate, disable=["parser", "ner"])
-                    self._active_backend = f"spacy:{candidate}"
-                    logger.info(
-                        "Tokenizer spaCy ativo",
-                        extra={
-                            "code": "tokenizer_backend",
-                            "metric": self._active_backend,
-                        },
-                    )
-                    return
-                except OSError:
-                    continue
-            logger.warning(
-                "Modelo spaCy indisponível; tentando NLTK",
-                extra={"code": "tokenizer_fallback", "metric": "spacy->nltk"},
-            )
         except ImportError:
             logger.warning(
                 "spaCy não instalado; tentando NLTK",
                 extra={"code": "tokenizer_fallback", "metric": "spacy->nltk"},
             )
+            return
+
+        for candidate in dict.fromkeys(m for m in (spacy_model, *_DEFAULT_MODELS) if m):
+            try:
+                self._spacy_nlp = spacy.load(candidate, disable=["parser", "ner"])
+            except OSError:
+                continue
+            self._active_backend = f"spacy:{candidate}"
+            logger.info(
+                "Tokenizer spaCy ativo",
+                extra={"code": "tokenizer_backend", "metric": self._active_backend},
+            )
+            return
+
+        logger.warning(
+            "Modelo spaCy indisponível; tentando NLTK",
+            extra={"code": "tokenizer_fallback", "metric": "spacy->nltk"},
+        )
 
     def _try_load_nltk(self, nltk_data_dir: str | None) -> None:
         try:
@@ -109,10 +104,4 @@ class Tokenizer:
         return _regex_tokenize(text)
 
     def tokenize_many(self, texts: Iterable[str]) -> list[list[str]]:
-        tokens = []
-        for text in texts:
-            try:
-                tokens.append(self.tokenize(text))
-            except ProcessingError:
-                tokens.append([])
-        return tokens
+        return [self.tokenize(t) if t and t.strip() else [] for t in texts]

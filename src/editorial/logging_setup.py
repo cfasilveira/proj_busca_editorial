@@ -25,10 +25,13 @@ _EXTRA_KEYS = (
     "code",
     "metric",
     "duration_ms",
-    "attempt",
     "actor",
     "scope",
 )
+
+
+def _extras(record: logging.LogRecord) -> dict[str, Any]:
+    return {key: value for key in _EXTRA_KEYS if (value := getattr(record, key, None)) is not None}
 
 
 class JsonFormatter(logging.Formatter):
@@ -41,23 +44,16 @@ class JsonFormatter(logging.Formatter):
         }
         if record.exc_info:
             payload["exc"] = self.formatException(record.exc_info)
-        for key in _EXTRA_KEYS:
-            value = getattr(record, key, None)
-            if value is not None:
-                payload[key] = value
+        payload.update(_extras(record))
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 
 class ConsoleFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         prefix = f"{record.levelname:<7} {record.name} | {record.getMessage()}"
-        extras = []
-        for key in _EXTRA_KEYS:
-            value = getattr(record, key, None)
-            if value is not None:
-                extras.append(f"{key}={value}")
+        extras = _extras(record)
         if extras:
-            prefix += " [" + ", ".join(extras) + "]"
+            prefix += " [" + ", ".join(f"{k}={v}" for k, v in extras.items()) + "]"
         if record.exc_info:
             prefix += "\n" + self.formatException(record.exc_info)
         return prefix

@@ -18,7 +18,7 @@ import numpy as np
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from ..errors import VectorError
+from ..errors import VectorError, fail
 from ..logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -44,51 +44,30 @@ class EmbeddingModel:
 
     def fit(self, documents: Sequence[str]) -> EmbeddingModel:
         """Treina o pipeline TF-IDF + SVD sobre o corpus de treino."""
-        if not documents:
+        texts = [doc for doc in documents if doc and doc.strip()]
+        if not texts:
             raise VectorError(
                 "Corpus vazio para treino de embeddings",
                 user_message="Não é possível treinar embeddings sem documentos.",
             )
-        texts = [doc for doc in documents if doc and doc.strip()]
-        if not texts:
-            raise VectorError(
-                "Corpus sem texto válido para treino de embeddings",
-                user_message="Nenhum documento com texto foi fornecido para o treino.",
-            )
 
         tfidf = TfidfVectorizer(min_df=self.min_df, lowercase=True, strip_accents="unicode")
         tfidf_matrix = tfidf.fit_transform(texts)
-
         if tfidf_matrix.shape[1] == 0:
             raise VectorError(
                 "Vocabulário vazio após TF-IDF",
                 user_message="Nenhum termo aproveitável foi extraído dos documentos.",
             )
 
-        components = min(self.dim, tfidf_matrix.shape[0] - 1, tfidf_matrix.shape[1])
-        if components < 2:
-            logger.warning(
-                "Corpus pequeno demais para a dimensão solicitada",
-                extra={
-                    "code": "svd_dim_reduced",
-                    "metric": f"{components} componentes",
-                },
-            )
-            components = max(1, components)
-
+        components = max(1, min(self.dim, tfidf_matrix.shape[0] - 1, tfidf_matrix.shape[1]))
         svd = TruncatedSVD(n_components=components, random_state=42)
         svd.fit(tfidf_matrix)
 
-        if (
-            hasattr(svd, "explained_variance_ratio_")
-            and float(svd.explained_variance_ratio_.sum()) < 0.5
-        ):
+        variance = float(svd.explained_variance_ratio_.sum())
+        if variance < 0.5:
             logger.warning(
                 "Baixa variância explicada pelo SVD",
-                extra={
-                    "code": "low_explained_variance",
-                    "metric": f"{svd.explained_variance_ratio_.sum():.3f}",
-                },
+                extra={"code": "low_explained_variance", "metric": f"{variance:.3f}"},
             )
 
         self._tfidf = tfidf
@@ -151,14 +130,14 @@ class EmbeddingModel:
                 target,
             )
         except (OSError, ValueError) as exc:
-            logger.error(
-                "Falha ao salvar modelo de embeddings",
-                extra={"code": "embedding_save_failed", "doc_id": str(target)},
-            )
-            raise VectorError(
-                f"Não foi possível salvar o modelo em {target}: {exc}",
+            fail(
+                logger,
+                VectorError,
+                f"Falha ao salvar modelo de embeddings em {target}: {exc}",
                 user_message=f"Não foi possível salvar o modelo de embeddings em '{target}'.",
-            ) from exc
+                code="embedding_save_failed",
+                doc_id=str(target),
+            )
 
     @classmethod
     def load(cls, path: str | Path) -> EmbeddingModel:
@@ -171,14 +150,14 @@ class EmbeddingModel:
         try:
             payload = joblib.load(target)
         except Exception as exc:
-            logger.error(
-                "Falha ao carregar modelo de embeddings",
-                extra={"code": "embedding_load_failed", "doc_id": str(target)},
-            )
-            raise VectorError(
-                f"Não foi possível carregar o modelo de {target}: {exc}",
+            fail(
+                logger,
+                VectorError,
+                f"Falha ao carregar modelo de embeddings de {target}: {exc}",
                 user_message=f"Não foi possível carregar o modelo de embeddings de '{target}'.",
-            ) from exc
+                code="embedding_load_failed",
+                doc_id=str(target),
+            )
 
         model = cls(dim=int(payload["dim"]), min_df=int(payload["min_df"]))
         model._tfidf = payload["tfidf"]

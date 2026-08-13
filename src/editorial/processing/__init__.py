@@ -2,7 +2,6 @@
 
 from .cleaner import CleanResult, TextCleaner
 from .normalizer import (
-    l2_normalize,
     length_stats,
     min_max_normalize,
     profile,
@@ -16,7 +15,6 @@ __all__ = [
     "CleanResult",
     "TextCleaner",
     "Tokenizer",
-    "l2_normalize",
     "length_stats",
     "min_max_normalize",
     "profile",

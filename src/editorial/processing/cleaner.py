@@ -1,8 +1,8 @@
 """Limpeza e normalização de texto bruto.
 
-Fail first: entrada inválida (None / vazio) é rejeitada. Falha gracefull:
-texto que perde todo o conteúdo após limpeza é sinalizado por retorno
-de estado `empty`, permitindo o chamador registrar sem travar o pipeline.
+Fail first: entrada inválida (None) é rejeitada. Fail gracefully: texto que
+perde todo o conteúdo após limpeza é sinalizado por `had_content=False`,
+permitindo ao chamador registrar sem travar o pipeline.
 """
 
 from __future__ import annotations
@@ -25,7 +25,6 @@ _WS_RE = re.compile(r"\s+")
 @dataclass(frozen=True)
 class CleanResult:
     text: str
-    was_cleaned: bool
     had_content: bool
 
 
@@ -50,39 +49,19 @@ class TextCleaner:
                 user_message="Não é possível limpar um texto nulo.",
             )
 
-        original = text
         cleaned = text
-        changed = False
-
         if self.normalize_unicode:
-            normalized = unicodedata.normalize("NFC", cleaned)
-            changed = changed or normalized != cleaned
-            cleaned = normalized
-
+            cleaned = unicodedata.normalize("NFC", cleaned)
         if self.remove_urls:
-            stripped = _URL_RE.sub(" ", cleaned)
-            changed = changed or stripped != cleaned
-            cleaned = stripped
-
+            cleaned = _URL_RE.sub(" ", cleaned)
         if self.remove_emails:
-            stripped = _EMAIL_RE.sub(" ", cleaned)
-            changed = changed or stripped != cleaned
-            cleaned = stripped
+            cleaned = _EMAIL_RE.sub(" ", cleaned)
+        cleaned = _WS_RE.sub(" ", _CONTROL_RE.sub(" ", cleaned)).strip()
 
-        stripped = _CONTROL_RE.sub(" ", cleaned)
-        changed = changed or stripped != cleaned
-        cleaned = stripped
-
-        normalized_ws = _WS_RE.sub(" ", cleaned).strip()
-        changed = changed or normalized_ws != cleaned
-        cleaned = normalized_ws
-
-        had_content = bool(original.strip())
-        if had_content and len(cleaned) < self.min_chars:
+        had_content = bool(text.strip()) and len(cleaned) >= self.min_chars
+        if text.strip() and not had_content:
             logger.warning(
                 "Texto perdeu todo o conteúdo após limpeza",
                 extra={"code": "cleaned_to_empty"},
             )
-            return CleanResult(text=cleaned, was_cleaned=changed, had_content=False)
-
-        return CleanResult(text=cleaned, was_cleaned=changed, had_content=had_content)
+        return CleanResult(text=cleaned, had_content=had_content)

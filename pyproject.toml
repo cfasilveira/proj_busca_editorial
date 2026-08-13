@@ -46,6 +46,11 @@ line-length = 100
 select = ["E", "F", "I", "UP", "B", "SIM", "PLW", "RUF"]
 ignore = ["SIM118", "PLW3201"]
 
+# _env() em defaults de dataclass é intencional: valores imutáveis lidos uma
+# única vez do ambiente no import.
+[tool.ruff.lint.per-file-ignores]
+"src/editorial/config.py" = ["RUF009"]
+
 [tool.ruff.format]
 quote-style = "double"
 

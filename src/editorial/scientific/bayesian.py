@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from scipy import stats as scipy_stats
 
 from ..errors import ScientificError
 from ..logging_setup import get_logger
@@ -61,15 +62,14 @@ def bayesian_proportion(
             "Hiperparâmetros do prior devem ser positivos",
             user_message="Os hiperparâmetros do prior precisam ser positivos.",
         )
-    if not (0.0 < credibility < 1.0):
+    if not (0.0 < credibility <= 1.0):
         raise ScientificError(
-            "Nível de credibilidade fora de (0, 1)",
+            "Nível de credibilidade fora de (0, 1]",
             user_message="O nível de credibilidade precisa estar entre 0 e 1.",
         )
 
     alpha_post = prior_alpha + successes
     beta_post = prior_beta + trials - successes
-
     mean = alpha_post / (alpha_post + beta_post)
     mode = (
         (alpha_post - 1) / (alpha_post + beta_post - 2)
@@ -77,17 +77,8 @@ def bayesian_proportion(
         else mean
     )
 
-    lower, upper = 0.05, 0.95
-    if credibility < 1.0:
-        tail = (1.0 - credibility) / 2.0
-        lower, upper = tail, 1.0 - tail
-
-    from scipy import stats as scipy_stats  # type: ignore[import-not-found]
-
-    lo, hi = (
-        scipy_stats.beta.ppf(lower, alpha_post, beta_post),
-        scipy_stats.beta.ppf(upper, alpha_post, beta_post),
-    )
+    tail = (1.0 - credibility) / 2.0
+    lo, hi = scipy_stats.beta.ppf([tail, 1.0 - tail], alpha_post, beta_post)
 
     return ProportionEstimate(
         successes=successes,
@@ -120,19 +111,21 @@ def probability_of_superiority(
     est_b = bayesian_proportion(successes_b, trials_b, prior_alpha, prior_beta)
 
     rng = np.random.default_rng(seed)
-    alpha_a = prior_alpha + successes_a
-    beta_a = prior_beta + trials_a - successes_a
-    alpha_b = prior_alpha + successes_b
-    beta_b = prior_beta + trials_b - successes_b
-
-    from scipy import stats as scipy_stats  # type: ignore[import-not-found]
-
-    draws_a = scipy_stats.beta.rvs(alpha_a, beta_a, size=samples, random_state=rng)
-    draws_b = scipy_stats.beta.rvs(alpha_b, beta_b, size=samples, random_state=rng)
-    prob = float(np.mean(draws_a > draws_b))
+    draws_a = scipy_stats.beta.rvs(
+        prior_alpha + successes_a,
+        prior_beta + trials_a - successes_a,
+        size=samples,
+        random_state=rng,
+    )
+    draws_b = scipy_stats.beta.rvs(
+        prior_alpha + successes_b,
+        prior_beta + trials_b - successes_b,
+        size=samples,
+        random_state=rng,
+    )
 
     return DifferenceEstimate(
-        probability_p1_gt_p2=prob,
+        probability_p1_gt_p2=float(np.mean(draws_a > draws_b)),
         posterior_mean_p1=est_a.posterior_mean,
         posterior_mean_p2=est_b.posterior_mean,
         samples=samples,

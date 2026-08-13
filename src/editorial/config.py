@@ -8,75 +8,54 @@ de chave obrigatória são rejeitados no boot.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 
-DOTENV_LOADED: bool = load_dotenv()
+load_dotenv()
 
 
-def _env_bool(name: str, default: bool) -> bool:
+def _env(name: str, default: Any, cast: Callable[[str], Any]) -> Any:
     raw = os.getenv(name)
-    if raw is None:
+    if raw is None or not raw.strip():
+        return default if default is None or not isinstance(default, str) else cast(default)
+    try:
+        return cast(raw)
+    except (ValueError, TypeError):
         return default
+
+
+def _as_bool(raw: str) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _env_int(name: str, default: int) -> int:
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    try:
-        return int(raw)
-    except ValueError:
-        return default
-
-
-def _env_float(name: str, default: float) -> float:
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    try:
-        return float(raw)
-    except ValueError:
-        return default
 
 
 @dataclass(frozen=True)
 class Settings:
     """Configuração do aplicativo, imutável após construção."""
 
-    log_level: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"))
-    log_json: bool = field(default_factory=lambda: _env_bool("LOG_JSON", False))
+    log_level: str = _env("LOG_LEVEL", "INFO", str)
+    log_json: bool = _env("LOG_JSON", False, _as_bool)
 
-    data_dir: Path = field(default_factory=lambda: Path(os.getenv("DATA_DIR", "data")))
-    reports_dir: Path = field(default_factory=lambda: Path(os.getenv("REPORTS_DIR", "reports")))
-    index_path: Path = field(
-        default_factory=lambda: Path(os.getenv("INDEX_PATH", "data/index.faiss"))
-    )
-    model_path: Path = field(
-        default_factory=lambda: Path(os.getenv("MODEL_PATH", "data/embedding_model.joblib"))
-    )
+    data_dir: Path = _env("DATA_DIR", "data", Path)
+    reports_dir: Path = _env("REPORTS_DIR", "reports", Path)
+    index_path: Path = _env("INDEX_PATH", "data/index.faiss", Path)
+    model_path: Path = _env("MODEL_PATH", "data/embedding_model.joblib", Path)
 
-    vector_dim: int = field(default_factory=lambda: _env_int("VECTOR_DIM", 256))
+    vector_dim: int = _env("VECTOR_DIM", 256, int)
 
-    http_timeout: float = field(default_factory=lambda: _env_float("HTTP_TIMEOUT", 15.0))
-    user_agent: str = field(
-        default_factory=lambda: os.getenv("USER_AGENT", "editorial-cli/0.1 (+contact)")
-    )
+    http_timeout: float = _env("HTTP_TIMEOUT", 15.0, float)
+    user_agent: str = _env("USER_AGENT", "editorial-cli/0.1 (+contact)", str)
 
-    api_token: str | None = field(default_factory=lambda: os.getenv("EDITORIAL_API_TOKEN"))
-    admin_token: str | None = field(default_factory=lambda: os.getenv("EDITORIAL_ADMIN_TOKEN"))
+    api_token: str | None = _env("EDITORIAL_API_TOKEN", None, str)
+    admin_token: str | None = _env("EDITORIAL_ADMIN_TOKEN", None, str)
 
-    spacy_model: str = field(default_factory=lambda: os.getenv("SPACY_MODEL", "pt_core_news_sm"))
-    nltk_data_dir: Path | None = field(
-        default_factory=lambda: (
-            Path(os.getenv("NLTK_DATA_DIR")) if os.getenv("NLTK_DATA_DIR") else None
-        )
-    )
+    spacy_model: str = _env("SPACY_MODEL", "pt_core_news_sm", str)
+    nltk_data_dir: Path | None = _env("NLTK_DATA_DIR", None, Path)
 
-    max_text_chars: int = field(default_factory=lambda: _env_int("MAX_TEXT_CHARS", 100_000))
+    max_text_chars: int = _env("MAX_TEXT_CHARS", 100_000, int)
 
     def ensure_dirs(self) -> None:
         """Cria os diretórios de saída. Fail first: falha se não puder criar."""

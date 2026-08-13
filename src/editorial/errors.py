@@ -9,6 +9,9 @@ Filosofia de tratamento de erros:
 
 from __future__ import annotations
 
+import logging
+from typing import Any, NoReturn
+
 
 class EditorialError(Exception):
     """Erro base de todo o domínio."""
@@ -50,3 +53,22 @@ class ReportError(EditorialError):
 
 class SecurityError(EditorialError):
     kind = "security_error"
+
+
+def fail(
+    logger: logging.Logger,
+    error_cls: type[EditorialError],
+    message: str,
+    *,
+    user_message: str | None = None,
+    level: int = logging.ERROR,
+    **extra: Any,
+) -> NoReturn:
+    """Registra o erro em log estruturado e levanta exceção de domínio.
+
+    Encapsula a filosofia "fail gracefully": mensagem clara ao usuário
+    (`user_message`) + log auditável, sem travar o sistema.
+    """
+    details = {k: v for k, v in extra.items() if v is not None}
+    logger.log(level, message, extra=details)
+    raise error_cls(message, user_message=user_message)
