@@ -1,0 +1,24 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Artefatos gerados em runtime
+reports/
+data/index.faiss
+data/index.faiss.ids
+data/embedding_model.joblib
+.env
+
+# Cache de testes/lint
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+

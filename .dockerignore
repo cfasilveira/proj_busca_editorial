@@ -1,0 +1,13 @@
+.git
+.venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+reports
+data/index.faiss
+data/index.faiss.ids
+data/embedding_model.joblib

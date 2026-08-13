@@ -1,0 +1,55 @@
+[project]
+name = "editorial"
+version = "0.1.0"
+description = "Aplicativo genérico e leve para coleta, processamento e análise de textos editoriais (perfis linguísticos e ideológicos)."
+readme = "README.md"
+authors = [
+    { name = "cfasilveira", email = "cfasilveira@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "faiss-cpu>=1.15.0",
+    "httpx>=0.28.1",
+    "lxml>=6.1.1",
+    "nltk>=3.10.3",
+    "numpy>=2.5.2",
+    "python-dotenv>=1.2.2",
+    "scikit-learn>=1.9.0",
+    "spacy>=3.8.15",
+]
+
+[project.scripts]
+editorial = "editorial:main"
+
+[project.optional-dependencies]
+audit = [
+    "pip-audit>=2.10.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.3",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PLW", "RUF"]
+ignore = ["SIM118", "PLW3201"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
