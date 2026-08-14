@@ -31,6 +31,24 @@ class TestCleaner:
         result = TextCleaner().clean("https://s.com")
         assert result.had_content is False
 
+    def test_removes_transcript_artifacts(self):
+        result = TextCleaner().clean(">> Bom dia, eh, o que houve, né? hum, vejamos.")
+        assert ">>" not in result.text
+        assert "eh" not in result.text
+        assert "né" not in result.text
+        assert "hum" not in result.text
+        assert "Bom dia" in result.text
+        assert "vejamos" in result.text
+
+    def test_keeps_words_containing_hesitation_substring(self):
+        result = TextCleaner().clean("humanidade e hum")
+        assert result.text == "humanidade e"
+
+    def test_artifacts_can_be_disabled(self):
+        result = TextCleaner(remove_transcript_artifacts=False).clean(">> Bom dia, eh, ok.")
+        assert ">>" in result.text
+        assert "eh" in result.text
+
 
 class TestTokenizer:
     def test_empty_text_raises_fail_first(self):

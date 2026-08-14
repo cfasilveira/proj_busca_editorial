@@ -19,6 +19,8 @@ logger = get_logger(__name__)
 _URL_RE = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 _CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_SPEAKER_RE = re.compile(r">>|<<")
+_HESITATION_RE = re.compile(r"\b(?:eh|né|uh|hum|ahn|hmm)\b", re.IGNORECASE)
 _WS_RE = re.compile(r"\s+")
 
 
@@ -35,11 +37,13 @@ class TextCleaner:
         remove_urls: bool = True,
         remove_emails: bool = True,
         normalize_unicode: bool = True,
+        remove_transcript_artifacts: bool = True,
         min_chars: int = 1,
     ) -> None:
         self.remove_urls = remove_urls
         self.remove_emails = remove_emails
         self.normalize_unicode = normalize_unicode
+        self.remove_transcript_artifacts = remove_transcript_artifacts
         self.min_chars = min_chars
 
     def clean(self, text: str | None) -> CleanResult:
@@ -56,6 +60,9 @@ class TextCleaner:
             cleaned = _URL_RE.sub(" ", cleaned)
         if self.remove_emails:
             cleaned = _EMAIL_RE.sub(" ", cleaned)
+        if self.remove_transcript_artifacts:
+            cleaned = _SPEAKER_RE.sub(" ", cleaned)
+            cleaned = _HESITATION_RE.sub(" ", cleaned)
         cleaned = _WS_RE.sub(" ", _CONTROL_RE.sub(" ", cleaned)).strip()
 
         had_content = bool(text.strip()) and len(cleaned) >= self.min_chars

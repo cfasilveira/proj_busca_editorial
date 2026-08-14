@@ -1,0 +1,90 @@
+Por Claudio Hamilton Matos dos Santos, Cláudio Roberto Amitrano e Mônica Mora Y Araujo
+
+
+Conforme previsto na última Visão Geral da Conjuntura (Nota de Conjuntura no
+26, Carta de Conjuntura no 70, de abril de 2026), os dados do primeiro trimestre
+indicam que a economia brasileira começou o ano de 2026 em aceleração, com cres-
+cimento de 1,8% em relação ao primeiro trimestre de 2025 e de 1,1% em relação ao
+quarto trimestre de 2025. Como também já era previsível em abril, o referido cresci-
+mento – que se mostrou um pouco maior do que antecipávamos1 – foi liderado, pelo
+lado da produção, pelo setor agropecuário e, pelo lado do gasto, pelo consumo das
+famílias e pela Formação Bruta de Capital Fixo.
+Mas os dados do primeiro trimestre de 2026 – e os que já estão disponíveis para o
+segundo trimestre – não trouxeram apenas confirmações do que já antecipávamos.
+Os dados suscitaram também questionamentos sobre a extensão do “pouso suave [...]
+sem ruptura abrupta do nível de atividade, mas com clara perda de tração da deman-
+da interna”, que explicou tão bem a desaceleração da economia verificada no segundo
+semestre do ano passado (Nota de Conjuntura no 22, Carta de Conjuntura no 69, de
+dezembro de 2025). Não será surpresa, em particular, se o crescimento da economia
+neste ano vier a ser próximo ou maior do que o verificado em 2025, mesmo com as
+taxas de juros reais em patamares historicamente muito altos.2
+São múltiplos os motivos. Em primeiro lugar, é justo notar que a economia em
+2026 tem se beneficiado do bom desempenho de setores em grande medida exó-
+genos ao ciclo econômico doméstico – o supracitado setor agropecuário e a indús-
+tria extrativa mineral são os exemplos mais claros desse fenômeno. Desde, pelo
+menos, 2019, já se esperava que a produção de petróleo fosse recorde em 2026.3
+Tal expectativa – corroborada por várias projeções subsequentes
+e finalmente pelos fatos – se baseava em hipóteses técnicas sobre a intensificação da
+produção ou exaustão de poços já em operação e a entrada de novas unidades em
+campos já descobertos e com comercialidade declarada, nada tendo que ver com
+questões conjunturais. O valor da taxa Selic tem pouca relação também com os fato-
+res climáticos que sustentaram as safras recordes consecutivas de 2025, já efetivada,
+e de 2026, ainda projetada.
+Em segundo lugar, há o fato de que o mercado de trabalho também seguiu batendo
+recordes ao longo dos últimos doze meses, mesmo diante da percepção – articulada
+na ata da 270ª reunião do Comitê de Política Monetária (Copom), de maio de 2025 – de que “a inflexão no
+mercado de trabalho também é parte do mecanismo de política monetária e deve se aprofundar ao longo do
+tempo, de modo compatível com um cenário de política monetária restritiva”. Tal inflexão ainda não se mate-
+rializou, entretanto. Ao contrário: o comportamento recente do mercado de trabalho segue caracterizado por
+taxas de participação abaixo dos valores pré-pandemia, notadamente entre jovens, e aumento (ainda que a taxas
+decrescentes) no número de ocupações –, resultando em mínimos históricos da taxa de desocupação e máximos
+históricos dos rendimentos reais e da massa salarial.
+A explicação mais plausível para essa dinâmica, a nosso ver, é dada pela conjunção do baixo poder da política
+monetária sobre a atividade doméstica com uma política fiscal caracterizada por gastos de natureza social eleva-
+dos e crescentes, com impactos diretos sobre o mercado de trabalho, tanto pelo lado da oferta quanto pelo lado
+da demanda. Com efeito, à luz de um conjunto crescente de evidências, parece-nos plausível supor que a queda
+da taxa de participação em relação ao período pré-pandemia esteja sendo determinada, em grande medida, pelo
+aumento da retenção escolar de adolescentes, via programas condicionados à frequência, como o Pé-de-Meia
+ou o Bolsa Família,4 e que o aumento das ocupações – inclusive formais – seja consequência dos elevados mul-
+tiplicadores de emprego e renda dos programas de transferências de renda e do gasto público em serviços tra-
+balho-intensivos.5 À luz dessas hipóteses, o continuado dinamismo do mercado de trabalho parece bem menos
+surpreendente do que o sugerido pela evolução da taxa de juros tomada isoladamente.
+O baixo poder da política monetária sobre a atividade talvez seja mais nítido à luz dos dados da evolução recente
+dos saldos de crédito, afinal, a ata da 279ª reunião do Copom (16 e 17 de junho de 2026) reitera a expectativa
+de que “os efeitos da política monetária restritiva por período prolongado sobre a demanda agregada [se façam]
+[...] sentir por meio da desaceleração do saldo de crédito, em particular de créditos livres”. Evidências recentes
+sugerem, contudo, que apenas um subconjunto restrito de modalidades de crédito responde às decisões do BCB,
+não havendo sinal, em particular, de que o crédito livre às pessoas físicas responda sistematicamente à política
+monetária (Elias e Guimarães, 2024, p. 138).6 Por essa razão, a supracitada desaceleração do crescimento do
+crédito é bastante limitada. Por exemplo, em setembro de 2024, quando o último ciclo de alta da Selic foi ini-
+ciado, o saldo do crédito livre às pessoas físicas foi 7,4% maior em termos reais do que em setembro de 2023.
+Em setembro de 2025, doze meses e seguidos aumentos da Selic depois, o saldo do crédito livre às pessoas físicas
+foi 6,9% maior em termos reais do que em setembro de 2024.
+Recente estudo do BCB – publicado no relatório de política monetária de março de 2026 – ilumina a questão.
+Estimando a resposta do crédito às decisões de política monetária, o estudo encontra transmissão estatisticamen-
+te significativa apenas no crédito de longo prazo – cada elevação de um ponto percentual na Selic reduz em cerca
+de 3,7% as concessões de longo prazo às pessoas físicas em doze meses. Por sua vez, o estudo nota que “o crédito
+livre emergencial a pessoas físicas parece responder positivamente às elevações da taxa Selic [...] resultado [que]
+não surpreende, já que as linhas que compõem esse grupo são mais utilizadas em situações de estresse financeiro
+das famílias, relativamente mais frequentes nos momentos em que a política monetária está contracionista”.
+Com efeito, os créditos ditos emergenciais – isto é, cheque especial e cartão de crédito rotativo e parcelado
+caracterizados por taxas de juros ainda punitivas, mesmo após seguidas mudanças regulatórias no sentido de
+diminuí-las – cresceram 22% em termos reais no período de setembro de 2024 a maio de 2026 (após aperto
+monetário), o dobro da taxa de crescimento real verificada para o crédito livre às pessoas físicas como um todo.
+Uma hipótese adicional sobre a demanda por crédito e o endividamento das famílias a ser investiga-
+da é aquela relacionada à formação de hábitos de consumo, também conhecido como efeito Dusenberry.7
+Segundo essa tese, os hábitos de consumo contam, em geral, com dois mecanismos distintos. O primeiro re-
+fere-se ao chamado efeito demonstração. A ideia central é que as decisões de consumo não se vinculam apenas
+à renda ou aos preços correntes, mas também à comparação que cada indivíduo faz com o consumo do grupo
+social ao qual se identifica (interdependência de preferências) ou a grupos sociais considerados mais elevados
+(status). O segundo mecanismo se refere ao chamado efeito persistência, pelo qual os indivíduos resistem a re-
+duzir seu padrão de consumo diante de perdas de renda real.
+O Brasil recente talvez esteja experimentando essa situação, tendo em vista que o efeito demonstração pode
+ter sido potencializado pela transmissão de informações sobre padrões de consumo de distintos grupos sociais,
+veiculadas pela internet e pelas redes sociais. Além disso, a renda real dos brasileiros permaneceu inferior ao pico
+de 2014 por cerca de dez anos, e apenas a partir de 2024 excedeu ligeiramente esse patamar.
+Isso ajudaria a explicar por que, mesmo diante do aumento da taxa de juros real, a demanda por crédito não
+diminuiu. Isto significa dizer que não apenas a elasticidade-juros da demanda por crédito seria baixa, como, tal-
+vez, tenha diminuído nos últimos tempos, tendo em vista que as concessões de crédito continuam aumentando,
+principalmente nas modalidades mais caras e de prazos mais curtos.
+Esse fenômeno poderia ser mais um fator a explicar, entre outros motivos, a baixa eficiência do canal do crédito

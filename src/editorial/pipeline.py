@@ -16,7 +16,7 @@ from typing import Any
 
 from .config import Settings
 from .errors import EditorialError
-from .ingestion import CsvSource, Document
+from .ingestion import CsvSource, Document, TxtSource
 from .logging_setup import get_logger
 from .processing import TextCleaner, Tokenizer, profile
 from .reports import ReportBuilder
@@ -41,6 +41,20 @@ def ingest_csv(
     csv_path: str | Path, settings: Settings, text_column: str = "text"
 ) -> list[Document]:
     return CsvSource(csv_path, text_column=text_column).ingest()
+
+
+def ingest_txt(txt_path: str | Path, settings: Settings) -> list[Document]:
+    return TxtSource(txt_path).ingest()
+
+
+def ingest_path(
+    source: str | Path, settings: Settings, text_column: str = "text"
+) -> list[Document]:
+    """Ingere um CSV, um arquivo .txt ou um diretório de arquivos .txt."""
+    path = Path(source)
+    if path.is_dir() or path.suffix.lower() == ".txt":
+        return ingest_txt(path, settings)
+    return ingest_csv(path, settings, text_column=text_column)
 
 
 def process_documents(documents: Sequence[Document], settings: Settings) -> ProcessedCorpus:
@@ -187,7 +201,7 @@ def _write_json(path: Path, data: Any) -> None:
 
 
 def run_pipeline(
-    csv_path: str | Path,
+    source: str | Path,
     out_dir: str | Path,
     settings: Settings,
     text_column: str = "text",
@@ -196,7 +210,7 @@ def run_pipeline(
     target = Path(out_dir)
     target.mkdir(parents=True, exist_ok=True)
 
-    documents = ingest_csv(csv_path, settings, text_column=text_column)
+    documents = ingest_path(source, settings, text_column=text_column)
     corpus = process_documents(documents, settings)
     analysis = analyze_corpus(corpus)
     vector_info = index_corpus(corpus, settings)

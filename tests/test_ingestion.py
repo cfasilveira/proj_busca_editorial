@@ -8,7 +8,7 @@ import pytest
 from conftest import SAMPLE_CSV
 
 from editorial.errors import IngestionError
-from editorial.ingestion import CsvSource
+from editorial.ingestion import CsvSource, TxtSource
 
 
 def test_csv_ingests_documents():
@@ -62,3 +62,38 @@ def test_csv_all_empty_rows_aborts(tmp_path: Path):
     all_empty.write_text("id,text\n1,\n2,\n", encoding="utf-8")
     with pytest.raises(IngestionError, match="Nenhuma linha válida"):
         CsvSource(all_empty, text_column="text").ingest()
+
+
+def test_txt_single_file_ingests_document(tmp_path: Path):
+    file = tmp_path / "editorial.txt"
+    file.write_text("Primeiro parágrafo.\n\nSegundo parágrafo.", encoding="utf-8")
+    docs = TxtSource(file).ingest()
+    assert len(docs) == 1
+    assert docs[0].uid == "editorial"
+    assert docs[0].text == "Primeiro parágrafo.\n\nSegundo parágrafo."
+    assert docs[0].source == "txt:editorial.txt"
+
+
+def test_txt_directory_ingests_one_document_per_file(tmp_path: Path):
+    (tmp_path / "a.txt").write_text("Texto A", encoding="utf-8")
+    (tmp_path / "b.txt").write_text("Texto B", encoding="utf-8")
+    (tmp_path / "ignorado.md").write_text("não entra", encoding="utf-8")
+    docs = TxtSource(tmp_path).ingest()
+    assert {d.uid for d in docs} == {"a", "b"}
+
+
+def test_txt_missing_path_fails_first(tmp_path: Path):
+    with pytest.raises(IngestionError, match="não encontrado"):
+        TxtSource(tmp_path / "nao_existe").ingest()
+
+
+def test_txt_no_files_aborts(tmp_path: Path):
+    (tmp_path / "só_md.md").write_text("x", encoding="utf-8")
+    with pytest.raises(IngestionError, match=r"Nenhum arquivo \.txt"):
+        TxtSource(tmp_path).ingest()
+
+
+def test_txt_all_empty_aborts(tmp_path: Path):
+    (tmp_path / "vazio.txt").write_text("   ", encoding="utf-8")
+    with pytest.raises(IngestionError, match=r"Nenhum arquivo \.txt válido"):
+        TxtSource(tmp_path / "vazio.txt").ingest()

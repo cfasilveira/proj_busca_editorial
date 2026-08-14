@@ -78,3 +78,21 @@ def test_cli_missing_csv_fails_gracefully(capsys):
     assert code == 1
     captured = capsys.readouterr()
     assert "não existe" in captured.err
+
+
+def test_cli_pipeline_with_txt(tmp_path: Path, capsys):
+    txt = tmp_path / "editorial.txt"
+    txt.write_text("Texto único de teste para o pipeline.", encoding="utf-8")
+    code = main(
+        [
+            "pipeline",
+            str(txt),
+            "--outdir",
+            str(tmp_path / "txt_out"),
+        ]
+    )
+    assert code == 0
+    report = json.loads((tmp_path / "txt_out" / "report.json").read_text(encoding="utf-8"))
+    assert report["sections"]["ingestion"]["count"] == 1
+    assert report["sections"]["documents"][0]["uid"] == "editorial"
+    assert report["sections"]["documents"][0]["source"] == "txt:editorial.txt"
